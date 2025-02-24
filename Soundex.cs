@@ -1,37 +1,37 @@
-using System;
 using System.Text;
 
 public class Soundex
 {
     public static string GenerateSoundex(string name)
     {
-        if (string.IsNullOrEmpty(name))
-        {
-            return string.Empty;
-        }
+        if (string.IsNullOrEmpty(name)) return string.Empty;
 
-        StringBuilder soundex = new StringBuilder();
+        StringBuilder soundex = new();
+
+        // Initiates the soundex by appending the first letter
         soundex.Append(char.ToUpper(name[0]));
-        char prevCode = GetSoundexCode(name[0]);
 
-        for (int i = 1; i < name.Length && soundex.Length < 4; i++)
+        // Goes through the characters appending codes until it is 4 characters long,
+        // or it has gone through all characters in string
+        for (var i = 1; i < name.Length; i++)
         {
-            char code = GetSoundexCode(name[i]);
-            if (code != '0' && code != prevCode)
-            {
-                soundex.Append(code);
-                prevCode = code;
-            }
+            var code = GetSoundexCode(name[i]);
+            soundex = AppendCodeToSoundex(soundex, code);
+
+            if (soundex.Length == 4 && soundex[^1] != '7') break;
         }
 
-        while (soundex.Length < 4)
-        {
-            soundex.Append('0');
-        }
+        soundex = PadSoundex(soundex);
 
         return soundex.ToString();
     }
 
+    /// <summary>
+    /// Assigns a number to a letter following the soundex system
+    /// If zero it means it is a discarded letter
+    /// </summary>
+    /// <param name="c">character to be coded</param>
+    /// <returns>A number from 0 to 7</returns>
     private static char GetSoundexCode(char c)
     {
         c = char.ToUpper(c);
@@ -61,8 +61,45 @@ public class Soundex
                 return '5';
             case 'R':
                 return '6';
+            case 'A':
+            case 'E':
+            case 'I':
+            case 'O':
+            case 'U':
+                return '7';
             default:
-                return '0'; // For A, E, I, O, U, H, W, Y
+                return '0'; // For H W Y
         }
+    }
+
+    private static StringBuilder AppendCodeToSoundex(StringBuilder soundex, char c)
+    {
+        var previous = soundex[^1];
+
+        // If same code as previous, return nothing
+        if (previous == c || c == '0') return soundex;
+
+        switch (previous)
+        {
+            // If previous was vowel, replace with whatever comes next
+            case '7':
+                soundex.Remove(soundex.Length - 1, 1);
+                soundex.Append(c);
+                return soundex;
+            default:
+                if (previous != c) soundex.Append(c);
+                return soundex;
+        }
+    }
+
+    /// <summary>
+    /// Makes the string be 4 characters long by adding zeros
+    /// </summary>
+    /// <param name="code">A string</param>
+    /// <returns>A 4 character string builder</returns>
+    private static StringBuilder PadSoundex(StringBuilder code)
+    {
+        while (code.Length < 4) code.Append('0');
+        return code;
     }
 }
